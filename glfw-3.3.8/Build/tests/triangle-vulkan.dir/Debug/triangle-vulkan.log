@@ -1,0 +1,5 @@
+﻿  Building Custom Rule C:/Users/thoma/OneDrive/Documenten/GitHub/GraphicsProgramming/glfw-3.3.8/tests/CMakeLists.txt
+  triangle-vulkan.c
+  glad_vulkan.c
+  Generating Code...
+  triangle-vulkan.vcxproj -> C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\glfw-3.3.8\Build\tests\Debug\triangle-vulkan.exe

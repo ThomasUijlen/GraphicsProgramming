@@ -1,0 +1,6 @@
+﻿  Building Custom Rule C:/Users/thoma/OneDrive/Documenten/GitHub/GraphicsProgramming/glfw-3.3.8/tests/CMakeLists.txt
+  empty.c
+  tinycthread.c
+  glad_gl.c
+  Generating Code...
+  empty.vcxproj -> C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\glfw-3.3.8\Build\tests\Debug\empty.exe
