@@ -12,22 +12,36 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+glm::mat4 updateCameraView();
 int init(GLFWwindow*& window);
 void loadTextFromFile(const char* filename, char*& text);
 unsigned int loadTexture(const char* filename);
 void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount);
 GLuint compileShader(GLenum shaderType, const char* shaderSource);
-GLuint createShaders();
+GLuint createShaders(const char* vertexShaderFilename, const char* fragmentShaderFilename);
+void renderSkybox(GLFWwindow* window, GLuint skyboxProgram, GLuint squareVAO, int squareIndexCount, glm::mat4 view, glm::mat4 projection, glm::vec3 lightDirection);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 glm::vec3 cameraPosition = glm::vec3(0, 2.5f, -3.0f);
+float cameraSpeed = 0.05f; // adjust accordingly
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+float pitch = 0.0f;
+float yaw = -90.0f;
+bool firstMouse = true;
 
 int main() {
     GLFWwindow* window;
     int res = init(window);
     if (res != 0) return res;
+
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     GLuint squareVAO;
     GLuint squareEBO;
@@ -36,15 +50,22 @@ int main() {
     createBox(squareVAO, squareEBO, squareSize, squareIndexCount);
 
     // Create shaders and get the program ID
-    GLuint simpleProgram = createShaders();
+    GLuint materialProgram = createShaders(
+        "Shaders/SimpleVertexShader.shader",
+        "Shaders/SimpleFragmentShader.shader"
+    );
+    GLuint skyboxProgram = createShaders(
+        "Shaders/SkyVertexShader.shader",
+        "Shaders/SkyFragmentShader.shader"
+    );
 
     // Load texture
     unsigned int boxTex = loadTexture("Textures/BoxDiffuse.png");
     unsigned int boxNormal = loadTexture("Textures/BoxNormal.png");
 
-    glUseProgram(simpleProgram);
-    glUniform1i(glGetUniformLocation(simpleProgram, "boxTexture"), 0);
-    glUniform1i(glGetUniformLocation(simpleProgram, "boxNormal"), 1);
+    glUseProgram(materialProgram);
+    glUniform1i(glGetUniformLocation(materialProgram, "boxTexture"), 0);
+    glUniform1i(glGetUniformLocation(materialProgram, "boxNormal"), 1);
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
@@ -53,11 +74,10 @@ int main() {
     world = glm::scale(world, glm::vec3(1, 1, 1));
     world = glm::translate(world, glm::vec3(0, 0, 0));
 
-    glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     glm::mat4 projection = glm::perspective(45.0f, SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    float angle = 0.0f;
     glm::vec3 ambientLightColor = glm::vec3(0.2f, 0.2f, 0.2f);
+    glm::vec3 lightDirection = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
 
     while (!glfwWindowShouldClose(window))
     {
@@ -66,19 +86,22 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Also clear the depth buffer
 
-        // Use the shader program
-        glUseProgram(simpleProgram);
+        glm::mat4 view = updateCameraView();
 
-        glUniformMatrix4fv(glGetUniformLocation(simpleProgram, "world"), 1, GL_FALSE, glm::value_ptr(world));
-        glUniformMatrix4fv(glGetUniformLocation(simpleProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(simpleProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        renderSkybox(window, skyboxProgram, squareVAO, squareIndexCount, view, projection, lightDirection);
+
+        // Use the shader program
+        glUseProgram(materialProgram);
+
+        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "world"), 1, GL_FALSE, glm::value_ptr(world));
+        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         // Update the light position
-        glm::vec3 lightPosition = glm::vec3(5.0f * cos(angle), 3.0f, 5.0f * sin(angle));
-        glUniform3fv(glGetUniformLocation(simpleProgram, "lightPosition"), 1, glm::value_ptr(lightPosition));
-        glUniform3fv(glGetUniformLocation(simpleProgram, "ambientLightColor"), 1, glm::value_ptr(ambientLightColor));
-        glUniform3fv(glGetUniformLocation(simpleProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
-        glUniform1f(glGetUniformLocation(simpleProgram, "shininess"), 32.0f);
+        glUniform3fv(glGetUniformLocation(materialProgram, "lightDirection"), 1, glm::value_ptr(lightDirection));
+        glUniform3fv(glGetUniformLocation(materialProgram, "ambientLightColor"), 1, glm::value_ptr(ambientLightColor));
+        glUniform3fv(glGetUniformLocation(materialProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
+        glUniform1f(glGetUniformLocation(materialProgram, "shininess"), 32.0f);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, boxTex);
@@ -90,17 +113,13 @@ int main() {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        // Increment the angle for the next frame
-        // Adjust the value inside the glm::radians function to change the speed of rotation
-        angle += glm::radians(1.0f);
     }
 
     // Cleanup
     glDeleteTextures(1, &boxTex);
     glDeleteVertexArrays(1, &squareVAO);
     glDeleteBuffers(1, &squareEBO);
-    glDeleteProgram(simpleProgram);
+    glDeleteProgram(materialProgram);
 
     glfwTerminate();
     return 0;
@@ -111,6 +130,67 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    float speed = cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+        speed = 2.0f * cameraSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPosition += speed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPosition -= speed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        cameraPosition -= speed * cameraUp;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        cameraPosition += speed * cameraUp;
+}
+
+
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f; // adjust to your liking
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    // Make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+}
+
+glm::mat4 updateCameraView()
+{
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+
+    // Calculate the new view matrix
+    glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    return view;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -142,6 +222,36 @@ int init(GLFWwindow*& window) {
 
     return 0;
 }
+
+void renderSkybox(GLFWwindow* window, GLuint skyboxProgram, GLuint squareVAO, int squareIndexCount, glm::mat4 view, glm::mat4 projection, glm::vec3 lightDirection) {
+    // Disable depth writing (we always want the skybox behind everything else)
+    glDepthMask(GL_FALSE);
+
+    // Culling is not necessary for skybox (it's always viewed from the inside)
+    glDisable(GL_CULL_FACE);
+
+    // Use the skybox shader
+    glUseProgram(skyboxProgram);
+
+    // Remove the translation from the view matrix
+    glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(view));
+
+    glUniformMatrix4fv(glGetUniformLocation(skyboxProgram, "view"), 1, GL_FALSE, glm::value_ptr(viewNoTranslation));
+    glUniformMatrix4fv(glGetUniformLocation(skyboxProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniform3fv(glGetUniformLocation(skyboxProgram, "lightDirection"), 1, glm::value_ptr(lightDirection));
+
+    // Draw the skybox cube
+    glBindVertexArray(squareVAO);
+    glDrawElements(GL_TRIANGLES, squareIndexCount, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    // Restore the previous OpenGL state
+    glEnable(GL_CULL_FACE);
+    glDepthMask(GL_TRUE);
+
+    glUseProgram(0); // Unbind the shader program
+}
+
 
 void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount)
 {
@@ -277,10 +387,9 @@ GLuint compileShader(GLenum shaderType, const char* shaderSource)
     return shader;
 }
 
-GLuint createShaders()
+GLuint createShaders(const char* vertexShaderFilename, const char* fragmentShaderFilename)
 {
     // Load vertex shader
-    const char* vertexShaderFilename = "Shaders/SimpleVertexShader.shader";
     char* vertexShaderSource = nullptr;
     loadTextFromFile(vertexShaderFilename, vertexShaderSource);
     if (vertexShaderSource == nullptr)
@@ -299,7 +408,6 @@ GLuint createShaders()
     }
 
     // Load fragment shader
-    const char* fragmentShaderFilename = "Shaders/SimpleFragmentShader.shader";
     char* fragmentShaderSource = nullptr;
     loadTextFromFile(fragmentShaderFilename, fragmentShaderSource);
     if (fragmentShaderSource == nullptr)
@@ -350,6 +458,7 @@ GLuint createShaders()
 
     return shaderProgram;
 }
+
 
 void loadTextFromFile(const char* filename, char*& text)
 {

@@ -1,2 +1,8 @@
 ﻿  Main.cpp
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(158,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(159,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(163,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(164,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(165,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(166,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   GraphicsProgramming.vcxproj -> C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\x64\Debug\GraphicsProgramming.exe

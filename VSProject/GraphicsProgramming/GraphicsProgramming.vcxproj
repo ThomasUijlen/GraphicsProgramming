@@ -157,6 +157,8 @@
   <ItemGroup>
     <None Include="Shaders\SimpleFragmentShader.shader" />
     <None Include="Shaders\SimpleVertexShader.shader" />
+    <None Include="Shaders\SkyFragmentShader.shader" />
+    <None Include="Shaders\SkyVertexShader.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h" />
