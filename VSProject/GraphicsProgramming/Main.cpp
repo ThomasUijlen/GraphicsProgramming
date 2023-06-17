@@ -80,6 +80,10 @@ int main() {
     unsigned int terrainTex = loadTexture("Textures/Terrain.jpg");
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilMask(0xFF);
+
 
     glm::mat4 world = glm::mat4(1.0f);
 
@@ -91,12 +95,14 @@ int main() {
     Mesh terrainMesh = createTerrain(100, 100, 10.0f, 2.0f, 1000);
     Model backpack = Model("Models/backpack/backpack.obj", complexMaterialProgram);
 
+    float angle = 0.0f;
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Also clear the depth buffer
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);  // Also clear the depth buffer
 
         glm::mat4 view = updateCameraView();
 
@@ -118,8 +124,10 @@ int main() {
         renderMesh(simpleMaterialProgram, terrainMesh, terrainMatrix, terrainTex);
 
         glm::mat4 backpackMatrix = glm::mat4(1.0f);
-        backpackMatrix = glm::translate(backpackMatrix, glm::vec3(2.0f, 0.0f, 0.0f));
-        backpack.render(terrainMatrix, view, projection, ambientLightColor, lightDirection);
+        backpackMatrix = glm::translate(backpackMatrix, glm::vec3(0.0f, -1.0f, -5.0f));
+        backpackMatrix = glm::rotate(backpackMatrix, angle, glm::vec3(0, 1, 0));
+        backpack.render(backpackMatrix, view, projection, ambientLightColor, lightDirection);
+        //angle += 0.01f;
 
         glfwSwapBuffers(window);
         glfwPollEvents();

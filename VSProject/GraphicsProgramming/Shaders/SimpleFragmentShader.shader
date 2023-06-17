@@ -19,6 +19,7 @@ void main()
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(-lightDirection);
     float diff = max(dot(norm, lightDir), 0.0);
+    diff = floor(diff / 0.2) * 0.2;
     vec3 diffuse = diff * vec3(texture(albedoTexture, UV));
 
     // Combining all
