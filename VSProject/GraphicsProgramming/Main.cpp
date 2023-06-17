@@ -34,10 +34,11 @@ int init(GLFWwindow*& window);
 void loadTextFromFile(const char* filename, char*& text);
 unsigned int loadTexture(const char* filename);
 void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount);
-Mesh createTerrain(int width, int depth, float scale);
+Mesh createTerrain(int width, int depth, float scale, float amplitude, int seed);
 GLuint compileShader(GLenum shaderType, const char* shaderSource);
 GLuint createShaders(const char* vertexShaderFilename, const char* fragmentShaderFilename);
 void renderSkybox(GLFWwindow* window, GLuint skyboxProgram, GLuint squareVAO, int squareIndexCount, glm::mat4 view, glm::mat4 projection, glm::vec3 lightDirection);
+void renderMesh(GLuint program, const Mesh& mesh, const glm::mat4& modelMatrix, int texture);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -77,26 +78,18 @@ int main() {
     );
 
     // Load texture
-    unsigned int boxTex = loadTexture("Textures/BoxDiffuse.png");
-    unsigned int boxNormal = loadTexture("Textures/BoxNormal.png");
-
-    glUseProgram(materialProgram);
-    glUniform1i(glGetUniformLocation(materialProgram, "boxTexture"), 0);
-    glUniform1i(glGetUniformLocation(materialProgram, "boxNormal"), 1);
+    unsigned int terrainTex = loadTexture("Textures/Terrain.jpg");
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
     glm::mat4 world = glm::mat4(1.0f);
-    world = glm::rotate(world, glm::radians(45.0f), glm::vec3(0, 1, 0));
-    world = glm::scale(world, glm::vec3(1, 1, 1));
-    world = glm::translate(world, glm::vec3(0, 0, 0));
 
     glm::mat4 projection = glm::perspective(45.0f, SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
     glm::vec3 ambientLightColor = glm::vec3(0.2f, 0.2f, 0.2f);
     glm::vec3 lightDirection = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
 
-    Mesh terrainMesh = createTerrain(50, 50, 10.0f);
+    Mesh terrainMesh = createTerrain(500, 500, 10.0f, 2.0f, 1000);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -112,33 +105,23 @@ int main() {
         // Use the shader program
         glUseProgram(materialProgram);
 
-        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "world"), 1, GL_FALSE, glm::value_ptr(world));
+        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "model"), 1, GL_FALSE, glm::value_ptr(world));
         glUniformMatrix4fv(glGetUniformLocation(materialProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(materialProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         // Update the light position
         glUniform3fv(glGetUniformLocation(materialProgram, "lightDirection"), 1, glm::value_ptr(lightDirection));
         glUniform3fv(glGetUniformLocation(materialProgram, "ambientLightColor"), 1, glm::value_ptr(ambientLightColor));
-        glUniform3fv(glGetUniformLocation(materialProgram, "cameraPosition"), 1, glm::value_ptr(cameraPosition));
-        glUniform1f(glGetUniformLocation(materialProgram, "shininess"), 32.0f);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, boxTex);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, boxNormal);
-
-        glBindVertexArray(squareVAO);
-        glDrawElements(GL_TRIANGLES, squareIndexCount, GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(terrainMesh.vao);
-        glDrawElements(GL_TRIANGLES, terrainMesh.indices.size(), GL_UNSIGNED_INT, 0);
+        glm::mat4 terrainMatrix = glm::mat4(1.0f);
+        renderMesh(materialProgram, terrainMesh, terrainMatrix, terrainTex);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     // Cleanup
-    glDeleteTextures(1, &boxTex);
+    glDeleteTextures(1, &terrainTex);
     glDeleteVertexArrays(1, &squareVAO);
     glDeleteBuffers(1, &squareEBO);
     glDeleteProgram(materialProgram);
@@ -251,6 +234,7 @@ void renderSkybox(GLFWwindow* window, GLuint skyboxProgram, GLuint squareVAO, in
 
     // Culling is not necessary for skybox (it's always viewed from the inside)
     glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     // Use the skybox shader
     glUseProgram(skyboxProgram);
@@ -270,9 +254,23 @@ void renderSkybox(GLFWwindow* window, GLuint skyboxProgram, GLuint squareVAO, in
     // Restore the previous OpenGL state
     glEnable(GL_CULL_FACE);
     glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
 
     glUseProgram(0); // Unbind the shader program
 }
+
+void renderMesh(GLuint program, const Mesh& mesh, const glm::mat4& modelMatrix, int texture)
+{
+    glUseProgram(program);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(glGetUniformLocation(program, "albedoTexture"), GL_TEXTURE0);
+    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glBindVertexArray(mesh.vao);
+    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
 
 
 void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount)
@@ -382,20 +380,21 @@ void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount)
     indexCount = sizeof(indices) / sizeof(indices[0]);
 }
 
-Mesh createTerrain(int width, int depth, float scale) {
+Mesh createTerrain(int width, int depth, float scale, float amplitude, int seed) {
     Mesh mesh;
     mesh.vertices.resize(width * depth);
     mesh.indices.resize((width - 1) * (depth - 1) * 6);
 
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetSeed(seed);
 
     for (int z = 0; z < depth; ++z) {
         for (int x = 0; x < width; ++x) {
             int index = z * width + x;
-            float height = noise.GetNoise(x * scale, z * scale);
+            float height = amplitude * noise.GetNoise(x * scale, z * scale);
             mesh.vertices[index].position = glm::vec3(x, height, z);
-            mesh.vertices[index].uv = glm::vec2(x / float(width), z / float(depth));
+            mesh.vertices[index].uv = glm::vec2(x / 10.0f, z / 10.0f);
         }
     }
 

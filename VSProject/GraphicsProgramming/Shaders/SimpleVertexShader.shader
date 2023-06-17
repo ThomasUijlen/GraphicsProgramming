@@ -1,33 +1,22 @@
 #version 330 core
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 vertexColor;
-layout(location = 2) in vec2 vUV;
-layout(location = 3) in vec3 normal;
-layout(location = 4) in vec3 tangent;
-layout(location = 5) in vec3 bitangent;
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUV;
 
-out vec3 outColor;
-out vec2 outUV;
-out mat3 TBN;
-out vec3 worldPosition;
+out vec2 UV;
+out vec3 FragPos;
+out vec3 Normal;
 
-uniform mat4 world;
+uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
-    gl_Position = projection * view * world * vec4(position, 1.0);
-    outColor = vertexColor;
-    outUV = vUV;
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
+    UV = aUV;
 
-    vec3 T = normalize(mat3(world) * tangent);
-    vec3 B = normalize(mat3(world) * bitangent);
-    vec3 N = normalize(mat3(world) * normal);
-
-    // calculate TBN matrix
-    TBN = mat3(T, B, N);
-
-    worldPosition = mat3(world) * position;
+    gl_Position = projection * view * vec4(FragPos, 1.0);
 }

@@ -155,6 +155,8 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\ComplexFragmentShader.shader" />
+    <None Include="Shaders\ComplexVertexShader.shader" />
     <None Include="Shaders\SimpleFragmentShader.shader" />
     <None Include="Shaders\SimpleVertexShader.shader" />
     <None Include="Shaders\SkyFragmentShader.shader" />
