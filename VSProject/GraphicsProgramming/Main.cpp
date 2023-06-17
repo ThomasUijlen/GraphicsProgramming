@@ -88,7 +88,7 @@ int main() {
     glm::vec3 ambientLightColor = glm::vec3(0.2f, 0.2f, 0.2f);
     glm::vec3 lightDirection = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
 
-    Mesh terrainMesh = createTerrain(500, 500, 10.0f, 2.0f, 1000);
+    Mesh terrainMesh = createTerrain(100, 100, 10.0f, 2.0f, 1000);
     Model backpack = Model("Models/backpack/backpack.obj", complexMaterialProgram);
 
     while (!glfwWindowShouldClose(window))
@@ -114,8 +114,11 @@ int main() {
         glUniform3fv(glGetUniformLocation(simpleMaterialProgram, "ambientLightColor"), 1, glm::value_ptr(ambientLightColor));
 
         glm::mat4 terrainMatrix = glm::mat4(1.0f);
+        terrainMatrix = glm::translate(terrainMatrix, glm::vec3(-50.0f, -5.0f, -50.0f));
         renderMesh(simpleMaterialProgram, terrainMesh, terrainMatrix, terrainTex);
 
+        glm::mat4 backpackMatrix = glm::mat4(1.0f);
+        backpackMatrix = glm::translate(backpackMatrix, glm::vec3(2.0f, 0.0f, 0.0f));
         backpack.render(terrainMatrix, view, projection, ambientLightColor, lightDirection);
 
         glfwSwapBuffers(window);
