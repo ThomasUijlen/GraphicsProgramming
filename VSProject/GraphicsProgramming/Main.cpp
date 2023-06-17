@@ -4,11 +4,27 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <FastNoiseLite/FastNoiseLite.h>
 
 #include <fstream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <vector>
+
+struct Vertex {
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 uv;
+};
+
+struct Mesh {
+    GLuint vao;
+    GLuint vbo;
+    GLuint ebo;
+    std::vector<Vertex> vertices;
+    std::vector<GLuint> indices;
+};
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -18,6 +34,7 @@ int init(GLFWwindow*& window);
 void loadTextFromFile(const char* filename, char*& text);
 unsigned int loadTexture(const char* filename);
 void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount);
+Mesh createTerrain(int width, int depth, float scale);
 GLuint compileShader(GLenum shaderType, const char* shaderSource);
 GLuint createShaders(const char* vertexShaderFilename, const char* fragmentShaderFilename);
 void renderSkybox(GLFWwindow* window, GLuint skyboxProgram, GLuint squareVAO, int squareIndexCount, glm::mat4 view, glm::mat4 projection, glm::vec3 lightDirection);
@@ -79,6 +96,8 @@ int main() {
     glm::vec3 ambientLightColor = glm::vec3(0.2f, 0.2f, 0.2f);
     glm::vec3 lightDirection = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
 
+    Mesh terrainMesh = createTerrain(50, 50, 10.0f);
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -110,6 +129,9 @@ int main() {
 
         glBindVertexArray(squareVAO);
         glDrawElements(GL_TRIANGLES, squareIndexCount, GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(terrainMesh.vao);
+        glDrawElements(GL_TRIANGLES, terrainMesh.indices.size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -360,6 +382,75 @@ void createBox(GLuint& vao, GLuint& ebo, int& size, int& indexCount)
     indexCount = sizeof(indices) / sizeof(indices[0]);
 }
 
+Mesh createTerrain(int width, int depth, float scale) {
+    Mesh mesh;
+    mesh.vertices.resize(width * depth);
+    mesh.indices.resize((width - 1) * (depth - 1) * 6);
+
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+
+    for (int z = 0; z < depth; ++z) {
+        for (int x = 0; x < width; ++x) {
+            int index = z * width + x;
+            float height = noise.GetNoise(x * scale, z * scale);
+            mesh.vertices[index].position = glm::vec3(x, height, z);
+            mesh.vertices[index].uv = glm::vec2(x / float(width), z / float(depth));
+        }
+    }
+
+    for (int z = 0; z < depth - 1; ++z) {
+        for (int x = 0; x < width - 1; ++x) {
+            int index = z * (width - 1) + x;
+            mesh.indices[index * 6 + 0] = z * width + x;
+            mesh.indices[index * 6 + 1] = (z + 1) * width + x;
+            mesh.indices[index * 6 + 2] = z * width + x + 1;
+            mesh.indices[index * 6 + 3] = (z + 1) * width + x;
+            mesh.indices[index * 6 + 4] = (z + 1) * width + x + 1;
+            mesh.indices[index * 6 + 5] = z * width + x + 1;
+        }
+    }
+
+    for (int z = 1; z < depth - 1; ++z) {
+        for (int x = 1; x < width - 1; ++x) {
+            glm::vec3& normal = mesh.vertices[z * width + x].normal;
+            normal = glm::vec3(0, 1, 0);
+            float heightLeft = mesh.vertices[z * width + x - 1].position.y;
+            float heightRight = mesh.vertices[z * width + x + 1].position.y;
+            float heightDown = mesh.vertices[(z - 1) * width + x].position.y;
+            float heightUp = mesh.vertices[(z + 1) * width + x].position.y;
+            normal.x = heightLeft - heightRight;
+            normal.z = heightDown - heightUp;
+            normal = glm::normalize(normal);
+        }
+    }
+
+    glGenVertexArrays(1, &mesh.vao);
+    glGenBuffers(1, &mesh.vbo);
+    glGenBuffers(1, &mesh.ebo);
+
+    glBindVertexArray(mesh.vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), &mesh.vertices[0], GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(GLuint), &mesh.indices[0], GL_STATIC_DRAW);
+
+    // Vertex Positions
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    // Vertex Normals
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    // Vertex Texture Coords
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+
+    glBindVertexArray(0);
+
+    return mesh;
+}
 
 
 
