@@ -1,9 +1,10 @@
 ﻿  Main.cpp
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(163,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(164,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(168,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(169,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(170,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(171,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(270,73): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Model.h(247,77): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(165,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(166,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(170,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(171,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(172,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(173,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\Main.cpp(272,73): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
   GraphicsProgramming.vcxproj -> C:\Users\thoma\OneDrive\Documenten\GitHub\GraphicsProgramming\VSProject\GraphicsProgramming\x64\Debug\GraphicsProgramming.exe

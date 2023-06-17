@@ -163,6 +163,7 @@
     <None Include="Shaders\SkyVertexShader.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Model.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>

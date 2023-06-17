@@ -5,18 +5,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <FastNoiseLite/FastNoiseLite.h>
+#include "Model.h"
 
 #include <fstream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <vector>
-
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 uv;
-};
 
 struct Mesh {
     GLuint vao;
@@ -68,9 +63,13 @@ int main() {
     createBox(squareVAO, squareEBO, squareSize, squareIndexCount);
 
     // Create shaders and get the program ID
-    GLuint materialProgram = createShaders(
+    GLuint simpleMaterialProgram = createShaders(
         "Shaders/SimpleVertexShader.shader",
         "Shaders/SimpleFragmentShader.shader"
+    );
+    GLuint complexMaterialProgram = createShaders(
+        "Shaders/ComplexVertexShader.shader",
+        "Shaders/ComplexFragmentShader.shader"
     );
     GLuint skyboxProgram = createShaders(
         "Shaders/SkyVertexShader.shader",
@@ -90,6 +89,7 @@ int main() {
     glm::vec3 lightDirection = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
 
     Mesh terrainMesh = createTerrain(500, 500, 10.0f, 2.0f, 1000);
+    Model backpack = Model("Models/backpack/backpack.obj", complexMaterialProgram);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -103,18 +103,20 @@ int main() {
         renderSkybox(window, skyboxProgram, squareVAO, squareIndexCount, view, projection, lightDirection);
 
         // Use the shader program
-        glUseProgram(materialProgram);
+        glUseProgram(simpleMaterialProgram);
 
-        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "model"), 1, GL_FALSE, glm::value_ptr(world));
-        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(materialProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(simpleMaterialProgram, "model"), 1, GL_FALSE, glm::value_ptr(world));
+        glUniformMatrix4fv(glGetUniformLocation(simpleMaterialProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(simpleMaterialProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         // Update the light position
-        glUniform3fv(glGetUniformLocation(materialProgram, "lightDirection"), 1, glm::value_ptr(lightDirection));
-        glUniform3fv(glGetUniformLocation(materialProgram, "ambientLightColor"), 1, glm::value_ptr(ambientLightColor));
+        glUniform3fv(glGetUniformLocation(simpleMaterialProgram, "lightDirection"), 1, glm::value_ptr(lightDirection));
+        glUniform3fv(glGetUniformLocation(simpleMaterialProgram, "ambientLightColor"), 1, glm::value_ptr(ambientLightColor));
 
         glm::mat4 terrainMatrix = glm::mat4(1.0f);
-        renderMesh(materialProgram, terrainMesh, terrainMatrix, terrainTex);
+        renderMesh(simpleMaterialProgram, terrainMesh, terrainMatrix, terrainTex);
+
+        backpack.render(terrainMatrix, view, projection, ambientLightColor, lightDirection);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -124,7 +126,7 @@ int main() {
     glDeleteTextures(1, &terrainTex);
     glDeleteVertexArrays(1, &squareVAO);
     glDeleteBuffers(1, &squareEBO);
-    glDeleteProgram(materialProgram);
+    glDeleteProgram(simpleMaterialProgram);
 
     glfwTerminate();
     return 0;
